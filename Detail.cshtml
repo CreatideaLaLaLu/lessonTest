@@ -1,0 +1,176 @@
+﻿<link href="~/Content/page.css" rel="stylesheet" />
+<div class="box">
+    <div class="box_in">
+
+
+        @model  RssNew
+
+        @{
+            ViewBag.Title = Model.Stitle;
+
+            int thispage = ViewBag.page;
+            var alink = "http://www.taichung.gov.tw/dl.asp?fileName=";
+            var link = "http://www.taichung.gov.tw/dl.asp?fileName=";
+            var s_link = "http://www.taichung.gov.tw/public/data/112010/s_";
+
+        
+
+            ViewBag.MetaTagKeyword = string.Empty;
+            ViewBag.MetaTagDescription = string.Empty;
+        }
+
+        @*客製麵包屑*@
+        <ul class="breadcrumb">
+            <li class="breadhome">
+                <a href="@Url.Content("~/")" title="首頁">首頁</a>
+            </li>
+
+            <li class="breadother">
+                <a href="@Url.Action("Index","RssNews")" title="花博新聞">花博新聞</a>
+            </li>
+            @*<li class="breadother">
+                @Model.Stitle
+            </li>*@
+
+        </ul>
+        @*A+A- 字縮放*@
+        @Html.Partial("ReSizeLetterPartial")
+
+        @*分享列印頁*@
+        @Html.Partial("_Share_Print")
+
+
+
+        <div class="page">
+            @*<h4>市府消息</h4>*@
+            @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+            @Html.HiddenFor(model => model.Icuitem)
+            @Html.Hidden("page", thispage)
+
+            <div>
+                @*@Html.Label("標題", htmlAttributes: new { @class = "control-label col-md-2" })*@
+                <h3 class="page_title">
+                    @Html.DisplayFor(modelItem => Model.Stitle)
+                </h3>
+            </div>
+            <div>
+
+            </div>
+
+            <div class="page_dept">
+                @*@Html.Label("發佈單位", htmlAttributes: new { @class = "control-label col-md-2" })*@
+                <div>
+                    發佈單位:
+
+                    @Html.DisplayFor(modelItem => Model.Idept)
+                </div>
+            </div>
+
+            <div class="page_date">
+                @*@Html.Label("最後異動時間", htmlAttributes: new { @class = "control-label col-md-2" })*@
+                <div>
+                    最後異動時間:
+
+                    @Convert.ToDateTime(Model.DeditDate.ToString()).ToString("yyyy-MM-dd")
+
+                </div>
+            </div>
+
+
+            <div class="main_pic">
+                @*@Html.Label("封面圖片", htmlAttributes: new { @class = "control-label col-md-2" })*@
+                <div>
+                    @if (Model.XimgFile != null)
+                    {
+                        if (Model.Icuitem == "1712353")
+                        {
+                            <a class="fancybox-effects-a" href="@link@Model.XimgFile" title="@Model.Stitle">
+                                <img class="example-image" src="@link@Model.XimgFile" alt="@Model.Stitle" />
+                            </a>
+                        }
+                        else
+                        {
+                            <a class="fancybox-effects-a" href="@s_link@Model.XimgFile" title="@Model.Stitle">
+                                <img class="example-image" src="@s_link@Model.XimgFile" alt="@Model.Stitle" />
+                            </a>
+
+                        }
+
+
+
+                    }
+                </div>
+            </div>
+
+            <div class="page_content">
+                @*@Html.Label("內容", htmlAttributes: new { @class = "control-label col-md-2" })*@
+                <div>
+                    @*@Html.DisplayFor(modelItem => Model.Xbody)*@
+
+                    @{ ViewBag.MetaTagDescription += Html.Raw(Model.Xbody);}
+
+                    @Html.Raw(Model.Xbody)
+
+                </div>
+            </div>
+
+            <div>
+                @*@Html.Label("連絡人", htmlAttributes: new { @class = "control-label col-md-2" })*@
+                <div>
+                    @Html.DisplayFor(modelItem => Model.XContact)
+
+                </div>
+            </div>
+
+            <div>
+                @*@Html.Label("連絡電話", htmlAttributes: new { @class = "control-label col-md-2" })*@
+                <div>
+                    @Html.DisplayFor(modelItem => Model.XContactTel)
+
+                </div>
+            </div>
+
+            @*<div>
+                @Html.Label("發佈日期", htmlAttributes: new { @class = "control-label col-md-2" })
+                <div>
+                    @Convert.ToDateTime(Model.DateS.ToString()).ToString("yyyy-MM-dd")
+                </div>
+            </div>*@
+
+
+            <div>
+                @*@Html.Label("消息連結", htmlAttributes: new { @class = "control-label col-md-2" })*@
+                <div>
+                    <h5><a href="@Model.Url" target="_blank" title="另開分頁" alt="">消息來源-臺中市政府</a></h5>
+
+                </div>
+            </div>
+
+            <div>
+                <div>
+                    @Html.ActionLink("回列表", "Index", new { page = ViewData["page"] }, htmlAttributes: new { @class = "btn btn-default btn-xs" })
+
+                </div>
+            </div>
+        </div>
+
+        @Html.Action("NearRssItems", "Partial", new { id = Model.Icuitem })
+
+        @section Scripts {
+            @Scripts.Render("~/bundles/jqueryval")
+            <script>
+                $(".fancybox-effects-a").fancybox({
+                    helpers: {
+                        title: {
+                            type: 'outside'
+                        },
+                        overlay: {
+                            speedOut: 0
+                        }
+                    }
+                });
+            </script>
+        }
+        <div class="help_height"></div>
+    </div>
+</div>
