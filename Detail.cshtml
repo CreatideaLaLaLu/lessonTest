@@ -1,163 +1,378 @@
-﻿<link href="~/Content/page.css" rel="stylesheet" />
-<div class="box">
+﻿<div class="box">
     <div class="box_in">
-
-
-        @model  RssNew
+        @using System.Text        @using Creatidea.CMS.Service        @using ItemType = Creatidea.CMS.Library.Enums.ItemType
+        @model Creatidea.CMS.Library.Models.Item
 
         @{
-            ViewBag.Title = Model.Stitle;
-
-            int thispage = ViewBag.page;
-            var alink = "http://www.taichung.gov.tw/dl.asp?fileName=";
-            var link = "http://www.taichung.gov.tw/dl.asp?fileName=";
-            var s_link = "http://www.taichung.gov.tw/public/data/112010/s_";
-
-        
-
             ViewBag.MetaTagKeyword = string.Empty;
             ViewBag.MetaTagDescription = string.Empty;
+            var title = Model.ItemTitles.FirstOrDefault(x => x.Lang == ViewBag.CurrentLanguage)?.Name;
+            ViewBag.Title = title;
+
+            var itemTypeControl = Model.ItemType.Control;
+
+            var isFristTag = true;
+
+
+            var big5Title = Encoding.GetEncoding(950).GetString(Encoding.Convert(Encoding.Unicode, Encoding.GetEncoding(950), Encoding.Unicode.GetBytes(title)));
+            var big5Url = Encoding.GetEncoding(950).GetString(Encoding.Convert(Encoding.Unicode, Encoding.GetEncoding(950), Encoding.Unicode.GetBytes(Request.Url.ToString())));
         }
 
-        @*客製麵包屑*@
-        <ul class="breadcrumb">
-            <li class="breadhome">
-                <a href="@Url.Content("~/")" title="首頁">首頁</a>
-            </li>
-
-            <li class="breadother">
-                <a href="@Url.Action("Index","RssNews")" title="花博新聞">花博新聞</a>
-            </li>
-            @*<li class="breadother">
-                @Model.Stitle
-            </li>*@
-
-        </ul>
+        @Html.Action("BreadCrumbs", "Partial", new { id = Model.Id, menuType = MenuType.Item })
         @*A+A- 字縮放*@
         @Html.Partial("ReSizeLetterPartial")
 
         @*分享列印頁*@
-        @Html.Partial("_Share_Print")
+        @Html.Partial("_Share_Print", null, new ViewDataDictionary { { "shareTitle", big5Title }, { "shareUrl", big5Url } })
 
 
-
+        @*PDF列印*@
+        @*@Html.ActionLink("單篇列印(PDF)", "WkhtmlToPdf", "File", new { url = @Url.Action("Detail", "Item", new { id = Model.FriendlyId }, null) }, new { target = "_blank" })*@
         <div class="page">
-            @*<h4>市府消息</h4>*@
-            @Html.ValidationSummary(true, "", new { @class = "text-danger" })
-            @Html.HiddenFor(model => model.Icuitem)
-            @Html.Hidden("page", thispage)
 
-            <div>
-                @*@Html.Label("標題", htmlAttributes: new { @class = "control-label col-md-2" })*@
-                <h3 class="page_title">
-                    @Html.DisplayFor(modelItem => Model.Stitle)
-                </h3>
-            </div>
-            <div>
+            @*標題*@
+            <h3 class="page_title">
+                <span>@(title)</span>
+            </h3>
 
-            </div>
-
-            <div class="page_dept">
-                @*@Html.Label("發佈單位", htmlAttributes: new { @class = "control-label col-md-2" })*@
-                <div>
-                    發佈單位:
-
-                    @Html.DisplayFor(modelItem => Model.Idept)
-                </div>
-            </div>
-
+            @*發表時間*@
+        <div class="page_date">
+            <span>
+                    @("Web_Item_Detail_CreateTime".Toi18n())
+                </span>
+            <span>
+                    @string.Format("Web_Item_Detail_CreateTimeFormat".Toi18n(), Model.CreateTime)
+                </span>
+        </div>
+            @*更新時間*@
             <div class="page_date">
-                @*@Html.Label("最後異動時間", htmlAttributes: new { @class = "control-label col-md-2" })*@
-                <div>
-                    最後異動時間:
-
-                    @Convert.ToDateTime(Model.DeditDate.ToString()).ToString("yyyy-MM-dd")
-
-                </div>
+                <span>
+                    @("Web_Item_Detail_UpdateTime".Toi18n())
+                </span>
+                <span>
+                    @string.Format("Web_Item_Detail_CreateTimeFormat".Toi18n(), Model.ModifyTime)
+                </span>
             </div>
 
+        @*頁面瀏覽人數*@
+            <div class="page_date">
+                <span>
+                    @("Web_Item_Detail_ReadPeopleCount".Toi18n())
+                </span>
+                <span>
+                    @ViewBag.PageCount
+                </span>
+            </div>
 
+            @*封面*@
             <div class="main_pic">
-                @*@Html.Label("封面圖片", htmlAttributes: new { @class = "control-label col-md-2" })*@
                 <div>
-                    @if (Model.XimgFile != null)
+                    @if (itemTypeControl.HasValue((int)ItemType.FrontCover) && Model.ItemFrontCover != null)
                     {
-                        if (Model.Icuitem == "1712353")
+
+
+                        if (Model.ItemFrontCover.Path != null)
                         {
-                            <a class="fancybox-effects-a" href="@link@Model.XimgFile" title="@Model.Stitle">
-                                <img class="example-image" src="@link@Model.XimgFile" alt="@Model.Stitle" />
-                            </a>
+                            if (Model.ItemFrontCover.Type == (int)ItemFrontCoverType.Youtube)
+                            {
+                                @Html.Partial("_YoutubeEmbed", new Creatidea.CMS.Web.Models.YoutubeEmbedVewModel { Code = Model.ItemFrontCover.Path })
+                            }
+                            else if (Model.ItemFrontCover.Type == (int)ItemFrontCoverType.FaceBook)
+                            {
+                                @Html.Partial("_FaceBookEmbed", new Creatidea.CMS.Web.Models.FaceBookEmbedVewModel { Code = Model.ItemFrontCover.Path })
+                            }
+                            else
+                            {
+                                <a class="fancybox-effects-a" href="@Url.Content(Model.ItemFrontCover.Path)" title="@title">
+                                    <img class="example-image" src="@Url.Content(Tools.Thumb(Model.ItemFrontCover.Path,1000))" alt="@title" />
+                                </a>
+                            }
                         }
-                        else
-                        {
-                            <a class="fancybox-effects-a" href="@s_link@Model.XimgFile" title="@Model.Stitle">
-                                <img class="example-image" src="@s_link@Model.XimgFile" alt="@Model.Stitle" />
-                            </a>
-
-                        }
-
-
 
                     }
                 </div>
             </div>
 
             <div class="page_content">
-                @*@Html.Label("內容", htmlAttributes: new { @class = "control-label col-md-2" })*@
-                <div>
-                    @*@Html.DisplayFor(modelItem => Model.Xbody)*@
 
-                    @{ ViewBag.MetaTagDescription += Html.Raw(Model.Xbody);}
+                @* HTML 文章內容 *@
 
-                    @Html.Raw(Model.Xbody)
 
-                </div>
+                @if (itemTypeControl.HasValue((int)ItemType.Article))
+                {
+                    var itemArticle = Model == null ? new ItemArticle() : Model.ItemArticles.FirstOrDefault(x => x.Lang == ViewBag.CurrentLanguage) ?? new ItemArticle();
+                    ViewBag.MetaTagDescription += itemArticle.Content;
+                    <div class="page_content">
+                        @Html.Raw(Creatidea.CMS.Service.Logic.Web.CKEditorPlugin.HtmlLoad(itemArticle.Content, Url))
+                    </div>
+                }
+
+                @* 雜誌 文章內容 *@
+                @if (itemTypeControl.HasValue((int)ItemType.Magazine))
+                {
+                    var itemItemMagazineRows = Model == null ? new List<ItemMagazineRow>() : Model.ItemMagazineRows ?? new List<ItemMagazineRow>();
+
+                    <div class="page_content">
+                        @foreach (var itemItemMagazineRow in itemItemMagazineRows)
+                        {
+                            <div class="@($"table_box column_{itemItemMagazineRow.TotalColumn}")">
+                                @foreach (var itemMagazine in itemItemMagazineRow.ItemMagazines.OrderBy(x => x.Sort))
+                                {
+                                    var itemMagazineType = (ItemMagazineType)Enum.Parse(typeof(ItemMagazineType), itemMagazine.Type.ToString());
+                                    <div>
+                                        @switch (itemMagazineType)
+                                        {
+                                            case ItemMagazineType.Text:
+                                            case ItemMagazineType.Html:
+                                                ViewBag.MetaTagDescription += itemMagazine.Content;
+                                                if (!string.IsNullOrEmpty(itemMagazine.Title))
+                                                {
+                                                    <h5 class="page_title2"><b>@itemMagazine.Title</b></h5>
+                                                }
+                                                @Html.Raw(itemMagazine.Content?.Replace("\r\n", "<br/>") ?? itemMagazine.Content)
+                                                break;
+                                            case ItemMagazineType.Image:
+
+
+                                                var itemMagzineImg = Creatidea.CMS.Web.Controllers.FileController.GetPath(itemMagazine.Content);
+
+                                                @*無itemMagazine Title時 加空格 *@
+                                                if (string.IsNullOrEmpty(itemMagazine.Title))
+                                                {
+                                                    itemMagazine.Title =title;
+                                                }
+
+                                                <a class="fancybox-effects-a" href="@Url.Content(itemMagzineImg)" title="@itemMagazine.Title">
+                                                    <img src="@Url.Action("Get", "File", new {id = itemMagazine.Content})" alt="@itemMagazine.Title" />
+                                                </a>
+
+                                                <p class="pic_Info center">@itemMagazine.Title</p>
+                                                break;
+                                            case ItemMagazineType.Video:
+                                                <video width="320" height="240" controls>
+                                                    <source src="@itemMagazine.Content">
+                                                    Your browser does not support the video tag.
+                                                </video>
+                                                break;
+                                            case ItemMagazineType.Youtube:
+                                                @Html.Partial("_YoutubeEmbed", new Creatidea.CMS.Web.Models.YoutubeEmbedVewModel { Code = itemMagazine.Content })
+                                                break;
+                                            default:
+                                                <div class="page_title2">@itemMagazine.Title</div>
+                                                @itemMagazine.Content
+                                                break;
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+                @* 專輯 *@
+                @if (itemTypeControl.HasValue((int)ItemType.Collection))
+                {
+                    var itemCollections = Model == null ? new List<ItemCollection>() : Model.ChildItemCollections.OrderBy(x => x.Sort).ToList() ?? new List<ItemCollection>();
+
+                    <div class="page_content">
+                        @foreach (var itemCollection in itemCollections)
+                        {
+                            var collectionItemTitle = itemCollection.ChildItem.ItemTitles.FirstOrDefault(x => x.Lang == ViewBag.CurrentLanguage)?.Name;
+                            <div class="page_title2">
+                                <a href="@(Url.Action("Detail", new { id = itemCollection.ChildItemId }))">@collectionItemTitle</a>
+                            </div>
+                        }
+                    </div>
+                }
+
+                @* 地理位置 *@
+                @if (itemTypeControl.HasValue((int)ItemType.Location))
+                {
+                    var itemLocation = Model == null ? new ItemLocation() : Model.ItemLocation ?? new ItemLocation();
+
+                    <div>
+                        @itemLocation.Address
+                        <div id="map" style="width: 100%; height: 350px;"></div>
+                        <input id="ItemLocation_Lat" type="hidden" value="@itemLocation.Lat" />
+                        <input id="ItemLocation_Lng" type="hidden" value="@itemLocation.Lng" />
+                        <input id="ItemLocation_Address" type="hidden" value="@itemLocation.Address" />
+                    </div>
+                }
+
+                @* 圖片庫 *@
+                @if (itemTypeControl.HasValue((int)ItemType.Images))
+                {
+                    var itemImages = Model == null ? new List<ItemImage>() : Model.ItemImages.Where(x => !x.IsDelete) ?? new List<ItemImage>();
+
+                    <div class="atcl_imgs">
+                        <ul>
+                            @foreach (var image in itemImages)
+                            {
+                                <li class="all">
+                                    <a class="fancybox-effects-a" href="@Url.Content(image.FilePath)" title="@(image.Description ?? image.DisplayName)">
+                                        <img class="example-image" src="@Url.Content(Tools.Thumb(image.FilePath,500))" alt="@(image.Description ?? image.DisplayName)" />
+                                    </a>
+                                </li>
+
+                            }
+                        </ul>
+                    </div>
+                }
+
+                @* 附加檔案 *@
+                @if (itemTypeControl.HasValue((int)ItemType.ArticleFiles))
+                {
+                    var itemArticleFiles = Model == null ? new List<ItemAttachedFile>() : Model.ItemAttachedFiles.Where(x => !x.IsDelete) ?? new List<ItemAttachedFile>();
+                    <div>
+
+                        @if (itemArticleFiles.Any())
+                        {
+                            <span class="add_item">
+                                <strong>@("Web_Item_Detail_AttachedFiles".Toi18n())</strong>
+                            </span>
+                        }
+
+                        @foreach (var file in itemArticleFiles.OrderBy(x => x.Sort))
+                        {
+                            var fileDownLoadName = file.DisplayName + "(檔案下載)";
+
+                            <span class="add_item">
+                                
+                           
+                                <a href="@Url.Action("GetFile", "File", new {path =Url.Content(file.FilePath), name = file.FileName })" title="@fileDownLoadName">
+
+                                    <span class="glyphicon glyphicon-file"></span>
+                                    @file.DisplayName
+
+                                </a>
+
+                                @*<a href="@Url.Content(file.FilePath)" target="_blank">
+                                        <span class="glyphicon glyphicon-file"></span>
+                                        @file.FileName
+                                    </a>*@
+                            </span>
+                        }
+                    </div>
+                }
+
+                @* 標籤 *@
+                @if (Model.Tags.Any())
+                {
+                    <div>
+                        <span>
+                            <strong>@("Web_Item_Detail_Tags".Toi18n())</strong>
+                        </span>
+
+                        <span>
+                            @foreach (var tag in Model.Tags)
+                            {
+                                if (!isFristTag)
+                                {
+                                    <text>、</text>
+
+                                }
+                                isFristTag = false;
+                                <a href="@Url.Action("List", "Tag", new {id = tag.Name})" title="@tag.Name">@tag.Name</a>
+                                if (!string.IsNullOrEmpty(ViewBag.MetaTagKeyword))
+                                {
+                                    ViewBag.MetaTagKeyword += ",";
+                                }
+                                ViewBag.MetaTagKeyword += tag.Name;
+                            }
+                        </span>
+                    </div>
+                }
+
+
+                @*外部連結*@
+                @if (itemTypeControl.HasValue((int)ItemType.Url))
+                {
+                    var itemUrls = Model == null ? new List<ItemUrl>() : Model.ItemUrls.OrderBy(x => x.Sort).ToList() ?? new List<ItemUrl>();
+                    <div>
+
+                        @if (itemUrls.Any())
+                        {
+                            <div class="add_item">
+                                <strong>@("Web_Item_Detail_Url".Toi18n())</strong>
+                            </div>
+                        }
+
+                        @foreach (var url in itemUrls)
+                        {
+                            var urlName = url.UrlName + "(另開新視窗)";
+
+                            <span class="add_item">
+                                <a href="@Url.Content(url.Url)" target="_blank" title="@urlName">
+                                    @url.UrlName
+                                </a>
+                            </span>
+                        }
+                    </div>
+                }
+
             </div>
 
-            <div>
-                @*@Html.Label("連絡人", htmlAttributes: new { @class = "control-label col-md-2" })*@
-                <div>
-                    @Html.DisplayFor(modelItem => Model.XContact)
-
-                </div>
-            </div>
-
-            <div>
-                @*@Html.Label("連絡電話", htmlAttributes: new { @class = "control-label col-md-2" })*@
-                <div>
-                    @Html.DisplayFor(modelItem => Model.XContactTel)
-
-                </div>
-            </div>
-
-            @*<div>
-                @Html.Label("發佈日期", htmlAttributes: new { @class = "control-label col-md-2" })
-                <div>
-                    @Convert.ToDateTime(Model.DateS.ToString()).ToString("yyyy-MM-dd")
-                </div>
-            </div>*@
-
-
-            <div>
-                @*@Html.Label("消息連結", htmlAttributes: new { @class = "control-label col-md-2" })*@
-                <div>
-                    <h5><a href="@Model.Url" target="_blank" title="另開分頁" alt="">消息來源-臺中市政府</a></h5>
-
-                </div>
-            </div>
-
-            <div>
-                <div>
-                    @Html.ActionLink("回列表", "Index", new { page = ViewData["page"] }, htmlAttributes: new { @class = "btn btn-default btn-xs" })
-
-                </div>
-            </div>
         </div>
 
-        @Html.Action("NearRssItems", "Partial", new { id = Model.Icuitem })
+        @Html.Action("NearItems", "Partial", new { id = Model.Id })
+        <div class="help_height"></div>
 
         @section Scripts {
             @Scripts.Render("~/bundles/jqueryval")
+            @if (itemTypeControl.HasValue((int)ItemType.Location))
+    {
+                <script>
+                    var gmap = new GoogleMap("map", "ItemLocation_Lat", "ItemLocation_Lng", $("#ItemLocation_Address").val());
+                    gmap.GetPlaces();
+                </script>
+            }
+
+            <script>
+                $("#mycollectiontable").delegate('tr', 'click', function () {
+
+                    $("#mycollectiontable tr").css("background-color", "white");
+                    $(this).css("background-color", "red");
+
+                    $("#mycollectionid_hidden").val($(this).attr('id'));
+
+                });
+
+                //儲存至專輯
+                function AddtoMyCollection() {
+
+                    var mycollectionid = $("#mycollectionid_hidden").val();
+                    var objid = $("#objid_hidden").val();
+                    var mycollectiontype = $("#mycollectiontype_hidden").val();
+
+                    var formData = new FormData();
+                    formData.append("mycollectionid", mycollectionid);
+                    formData.append("objid", objid);
+                    formData.append("menuType", mycollectiontype);
+
+                    if (mycollectionid === '') {
+                        alert('請選擇專輯');
+                    } else {
+
+                        $.ajax({
+                            url: '@Url.Action("SaveMyCollectionObj", "Manage")',
+                            type: 'POST',
+                            data: formData,
+                            processData: false,
+                            contentType: false,
+                            dataType: "text",
+                            success: function (response) {
+                                // .. do something
+                                console.log(response);
+                                alert(response);
+                            },
+                            error: function (jqXHR, textStatus, errorMessage) {
+                                console.log(errorMessage); // Optional
+                            }
+                        });
+                    }
+                }
+
+            </script>
+
             <script>
                 $(".fancybox-effects-a").fancybox({
                     helpers: {
@@ -170,7 +385,8 @@
                     }
                 });
             </script>
+
+
         }
-        <div class="help_height"></div>
     </div>
 </div>
